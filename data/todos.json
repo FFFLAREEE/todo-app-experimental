@@ -1,0 +1,29 @@
+{
+  "tasks": [
+    {
+      "id": "1",
+      "text": "buy milk with some books"
+    },
+    {
+      "id": "2",
+      "text": "help my friend to find a girl"
+    },
+    {
+      "id": "0mFYJT3n-8U",
+      "text": "go to school"
+    },
+    {
+      "id": "Yf-7g0ZuXFQ",
+      "text": "go to gym"
+    },
+    {
+      "id": "ff1PkFF5R60",
+      "text": "have a good sleep"
+    },
+    {
+      "id": "tFgAebxwOCo",
+      "text": "help my friend to find a girl and do my homework"
+    }
+  ],
+  "$schema": "./node_modules/json-server/schema.json"
+}
