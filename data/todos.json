@@ -23,6 +23,10 @@
     {
       "id": "tFgAebxwOCo",
       "text": "help my friend to find a girl and do my homework"
+    },
+    {
+      "id": "EagL1a3v4Cg",
+      "text": "say hello to my friends"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"
