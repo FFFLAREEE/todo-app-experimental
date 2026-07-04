@@ -1,10 +1,12 @@
 "use client";
 
+import { Input } from "@/components/ui/input";
 import { useState, type FormEventHandler } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { addTodo } from "@/api";
 import { v4 as uuidv4 } from "uuid";
+import { Button, buttonVariants } from "@/components/ui/button";
 
 export default function AddTaskPage() {
   const router = useRouter();
@@ -35,22 +37,18 @@ export default function AddTaskPage() {
       <h1 className="text-2xl font-bold mb-6">Add new task</h1>
 
       <form onSubmit={handleSubmitNewTodo} className="space-y-4">
-        <input
+        <Input
           value={newTaskValue}
           onChange={(e) => setNewTaskValue(e.target.value)}
           type="text"
           placeholder="Type here"
-          className="input input-bordered w-full"
         />
-
         <div className="flex justify-end gap-3">
-          <Link href="/" className="btn btn-ghost">
+          <Link href="/" className={buttonVariants({ variant: "ghost" })}>
             Cancel
           </Link>
 
-          <button type="submit" className="btn btn-primary">
-            Save
-          </button>
+          <Button type="submit">Save</Button>
         </div>
       </form>
     </main>
