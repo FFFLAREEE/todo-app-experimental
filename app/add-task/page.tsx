@@ -2,6 +2,7 @@
 
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
+import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
 import { addTodo } from "@/api";
 import { v4 as uuidv4 } from "uuid";
@@ -10,6 +11,7 @@ import { useForm, type SubmitHandler } from "react-hook-form";
 
 type AddTaskFormValues = {
   text: string;
+  description: string
 };
 
 export default function AddTaskPage() {
@@ -23,15 +25,18 @@ export default function AddTaskPage() {
   } = useForm<AddTaskFormValues>({
     defaultValues: {
       text: "",
+      description: "",
     },
   });
 
   const handleSubmitNewTodo: SubmitHandler<AddTaskFormValues> = async (data) => {
     const text = data.text.trim();
+    const description = data.description.trim();
 
     await addTodo({
       id: uuidv4(),
       text,
+      description,
     });
 
     reset();
@@ -61,6 +66,11 @@ export default function AddTaskPage() {
             </p>
           )}
         </div>
+        <Textarea
+          placeholder="Add a description"
+          {...register("description")}
+        />
+
 
         <div className="flex justify-end gap-3">
           <Link href="/" className={buttonVariants({ variant: "ghost" })}>
