@@ -1,5 +1,8 @@
 "use client";
-
+import {
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,33 +19,45 @@ type AddTaskFormValues = {
 
 export default function AddTaskPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const {
     register,
     handleSubmit,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<AddTaskFormValues>({
     defaultValues: {
       text: "",
       description: "",
     },
   });
+  
+  const addTaskMutation =useMutation(
+    {
+      mutationFn:addTodo,
+      onSuccess:async()=>{
+        await queryClient.invalidateQueries({
+          queryKey:["tasks"],
+        });
+        reset();
+        router.push("/")
+      }
+    }
+  )
+
+
 
   const handleSubmitNewTodo: SubmitHandler<AddTaskFormValues> = async (data) => {
     const text = data.text.trim();
     const description = data.description.trim();
 
-    await addTodo({
+    addTaskMutation.mutate({
       id: uuidv4(),
       text,
       description,
     });
 
-    reset();
-
-    router.push("/");
-    router.refresh();
   };
 
   return (
@@ -70,6 +85,14 @@ export default function AddTaskPage() {
           placeholder="Add a description"
           {...register("description")}
         />
+        {addTaskMutation.isError && (
+          <p className="text-sm text-red-500">
+            Failed to add task:{" "}
+            {addTaskMutation.error instanceof Error
+              ? addTaskMutation.error.message
+              : "Unknown error"}
+          </p>
+        )}
 
 
         <div className="flex justify-end gap-3">
@@ -77,8 +100,8 @@ export default function AddTaskPage() {
             Cancel
           </Link>
 
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Saving..." : "Save"}
+          <Button type="submit" disabled={addTaskMutation.isPending}>
+            {addTaskMutation.isPending? "Saving..." : "Save"}
           </Button>
         </div>
       </form>
