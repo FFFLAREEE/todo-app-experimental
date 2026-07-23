@@ -1,10 +1,14 @@
 "use client";
 
-import { ITask } from "@/types/tasks";
+import type { ITask } from "@/types/tasks";
 import { FaEdit, FaTrash } from "react-icons/fa";
-import React, { useState, type FormEventHandler } from "react";
+import { useState, type FormEventHandler } from "react";
+import {
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
+
 import Modal from "./Modal";
-import { useRouter } from "next/navigation";
 import { deleteTodo, editTodo } from "@/api";
 
 import { Button } from "@/components/ui/button";
@@ -16,51 +20,83 @@ interface TaskProps {
   task: ITask;
 }
 
-const Task: React.FC<TaskProps> = ({ task }) => {
-  const router = useRouter();
+const Task = ({ task }: TaskProps) => {
+  const queryClient = useQueryClient();
 
-  const [modalOpenEdit, setModalOpenEdit] = useState<boolean>(false);
-  const [modalOpenDeleted, setModalOpenDeleted] = useState<boolean>(false);
-  const [taskToEdit, setTaskToEdit] = useState<string>(task.text);
-  const [descriptionToEdit,setDescriptionToEdit]=useState<string>(task.description);
+  const [modalOpenEdit, setModalOpenEdit] = useState(false);
+  const [modalOpenDeleted, setModalOpenDeleted] = useState(false);
 
-  const handleSubmitEditTodo: FormEventHandler<HTMLFormElement> = async (e) => {
+  const [taskToEdit, setTaskToEdit] = useState(task.text);
+  const [descriptionToEdit, setDescriptionToEdit] = useState(
+    task.description
+  );
+
+  const editTaskMutation = useMutation({
+    mutationFn: editTodo,
+
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["tasks"],
+      });
+
+      setModalOpenEdit(false);
+    },
+  });
+
+  const deleteTaskMutation = useMutation({
+    mutationFn: deleteTodo,
+
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["tasks"],
+      });
+
+      setModalOpenDeleted(false);
+    },
+  });
+
+  const handleOpenEditModal = () => {
+    setTaskToEdit(task.text);
+    setDescriptionToEdit(task.description);
+    setModalOpenEdit(true);
+  };
+
+  const handleSubmitEditTodo: FormEventHandler<
+    HTMLFormElement
+  > = (e) => {
     e.preventDefault();
+
     const text = taskToEdit.trim();
-    const description =descriptionToEdit.trim();
-    if(!text){
+    const description = descriptionToEdit.trim();
+
+    if (!text) {
       return;
     }
 
-    await editTodo({
+    editTaskMutation.mutate({
       id: task.id,
       text,
       description,
     });
-
-    setModalOpenEdit(false);
-    router.refresh();
   };
 
-  const handleDeleteTask = async (id: string) => {
-    await deleteTodo(id);
-    setModalOpenDeleted(false);
-    router.refresh();
+  const handleDeleteTask = () => {
+    deleteTaskMutation.mutate(task.id);
   };
 
   return (
     <TableRow>
-     <TableCell className="w-full">
-  <div>
-    <p className="font-medium">{task.text}</p>
+      <TableCell className="w-full">
+        <div>
+          <p className="font-medium">{task.text}</p>
 
-    {task.description && (
-      <p className="mt-1 text-sm text-muted-foreground">
-        {task.description}
-      </p>
-    )}
-  </div>
-</TableCell>
+          {task.description && (
+            <p className="mt-1 text-sm text-muted-foreground">
+              {task.description}
+            </p>
+          )}
+        </div>
+      </TableCell>
 
       <TableCell>
         <div className="flex justify-end gap-2">
@@ -68,7 +104,7 @@ const Task: React.FC<TaskProps> = ({ task }) => {
             type="button"
             variant="ghost"
             className="h-8 w-8 p-0"
-            onClick={() => setModalOpenEdit(true)}
+            onClick={handleOpenEditModal}
           >
             <FaEdit className="text-blue-500" size={18} />
           </Button>
@@ -83,42 +119,83 @@ const Task: React.FC<TaskProps> = ({ task }) => {
           </Button>
         </div>
 
-        <Modal modalOpen={modalOpenEdit} setModalOpen={setModalOpenEdit}>
-          <form onSubmit={handleSubmitEditTodo} className="space-y-4">
+        <Modal
+          modalOpen={modalOpenEdit}
+          setModalOpen={setModalOpenEdit}
+        >
+          <form
+            onSubmit={handleSubmitEditTodo}
+            className="space-y-4"
+          >
             <h3 className="text-lg font-bold">Edit task</h3>
 
-            
-              <Input
-                value={taskToEdit}
-                onChange={(e) => setTaskToEdit(e.target.value)}
-                type="text"
-                placeholder="Type here"
-              />
-              <Textarea
-              value={descriptionToEdit}
-              onChange={(e)=>setDescriptionToEdit(e.target.value)}
-              placeholder="Task Description"
-              />
-              <div className="flex justify-end">
+            <Input
+              value={taskToEdit}
+              onChange={(e) =>
+                setTaskToEdit(e.target.value)
+              }
+              type="text"
+              placeholder="Type here"
+            />
 
-              <Button type="submit">Submit</Button>
+            <Textarea
+              value={descriptionToEdit}
+              onChange={(e) =>
+                setDescriptionToEdit(e.target.value)
+              }
+              placeholder="Task Description"
+            />
+
+            {editTaskMutation.isError && (
+              <p className="text-sm text-red-500">
+                Failed to edit task:{" "}
+                {editTaskMutation.error instanceof Error
+                  ? editTaskMutation.error.message
+                  : "Unknown error"}
+              </p>
+            )}
+
+            <div className="flex justify-end">
+              <Button
+                type="submit"
+                disabled={editTaskMutation.isPending}
+              >
+                {editTaskMutation.isPending
+                  ? "Saving..."
+                  : "Submit"}
+              </Button>
             </div>
           </form>
         </Modal>
 
-        <Modal modalOpen={modalOpenDeleted} setModalOpen={setModalOpenDeleted}>
+        <Modal
+          modalOpen={modalOpenDeleted}
+          setModalOpen={setModalOpenDeleted}
+        >
           <div className="space-y-4">
             <h3 className="text-lg">
               Are you sure you want to delete this task?
             </h3>
 
+            {deleteTaskMutation.isError && (
+              <p className="text-sm text-red-500">
+                Failed to delete task:{" "}
+                {deleteTaskMutation.error instanceof Error
+                  ? deleteTaskMutation.error.message
+                  : "Unknown error"}
+              </p>
+            )}
+
             <div className="flex justify-end">
               <Button
                 type="button"
                 variant="destructive"
-                onClick={() => handleDeleteTask(task.id)}
+                disabled={deleteTaskMutation.isPending}
+                onClick={handleDeleteTask}
               >
-                Yes
+                {deleteTaskMutation.isPending
+                  ? "Deleting..."
+                  : "Yes"}
               </Button>
             </div>
           </div>

@@ -6,8 +6,10 @@ const baseUrl = "http://localhost:3002/tasks";
 export const getAllTodos = async (): Promise<ITask[]> => {
   
   const res = await fetch(baseUrl,{cache:'no-store'});
-  const todos = await res.json();
-  return todos;
+  if(!res.ok){
+    throw new Error("Failed to fetch todos");
+  }
+  return res.json();
 };
 
 export const addTodo =async(todo:ITask):Promise<ITask> =>{
@@ -17,9 +19,13 @@ export const addTodo =async(todo:ITask):Promise<ITask> =>{
             'Content-Type':'application/json'
         },
         body:JSON.stringify(todo)
-    })
-    const newTodo =await res.json();
-    return newTodo;
+    });
+    if (!res.ok) {
+        throw new Error("Failed to add todo");
+      }
+    
+      return res.json();
+    
 
 
 }
@@ -32,18 +38,25 @@ export const editTodo =async(todo:ITask):Promise<ITask> =>{
         },
         body:JSON.stringify(todo)
     })
-    const updatedTodo =await res.json();
-    return updatedTodo;
+    if (!res.ok) {
+        throw new Error("Failed to edit todo");
+      }
+    
+      return res.json();
+   
 
 
 }
 
 
 export const deleteTodo =async(id:string):Promise<void> =>{
-   await fetch(`${baseUrl}/${id}`,{
+   const res=await fetch(`${baseUrl}/${id}`,{
         method:'DELETE',
        
-    })
+    });
+    if (!res.ok) {
+        throw new Error("Failed to delete todo");
+      }
 
 
 }
